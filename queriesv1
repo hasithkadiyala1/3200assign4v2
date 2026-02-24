@@ -1,0 +1,79 @@
+-- Q1
+SELECT DISTINCT c.LastName AS CustomerLast, c.Email AS CustomerEmail
+FROM customers c
+JOIN invoices i ON c.CustomerId = i.CustomerId;
+
+-- Q2
+SELECT al.title AS RecordTitle, ar.name AS PerformerName
+FROM Albums al
+JOIN artists ar ON al.ArtistId = ar.ArtistID;
+
+-- Q3
+SELECT c.state AS Region, COUNT(DISTINCT c.CustomerId) AS CustomerCount
+FROM customers c
+WHERE c.state IS NOT NULL
+GROUP BY c.State
+ORDER BY c.state ASC;
+
+-- Q4
+SELECT c.state AS Region, COUNT(DISTINCT c.CustomerID) AS CustomerTotal
+FROM customers c
+WHERE c.state IS NOT NULL
+GROUP BY c.State
+HAVING COUNT(DISTINCT c.customerID) > 10;
+
+-- Q5
+SELECT DISTINCT ar.name AS Performer
+FROM artists ar
+JOIN albums al ON ar.ArtistId = al.ArtistId
+WHERE LOWER(al.title) LIKE '%symphony%';
+
+-- Q6
+SELECT DISTINCT ar.Name AS Performer
+FROM artists ar
+JOIN albums al ON ar.ArtistID = al.ArtistID
+JOIN tracks t ON al.AlbumId = t.AlbumId
+JOIN media_types mt ON t.MediaTypeId = mt.MediaTypeId
+JOIN playlist_track pt ON t.TrackId = pt.TrackId
+JOIN playlists p ON pt.PlaylistId = p.PlaylistId
+WHERE (p.name = 'Brazilian Music' OR p.name = 'Grunge')
+AND LOWER(mt.name) LIKE '%mpeg%';
+
+-- Q7
+SELECT COUNT(*) AS ArtistTotal
+FROM (
+    SELECT ar.ArtistID
+    FROM artists ar
+    JOIN albums al ON ar.ArtistId = al.ArtistId
+    JOIN tracks t ON al.AlbumId = t.AlbumID
+    JOIN media_types mt ON t.MediaTypeId = mt.mediatypeID
+    WHERE LOWER(mt.name) LIKE '%mpeg%'
+    GROUP BY ar.ArtistId
+    HAVING COUNT(t.TrackId) >= 10
+);
+
+-- Q8
+SELECT p.playListID AS ListID,
+       p.name AS ListTitle,
+       ROUND(SUM(t.Milliseconds) / 3600000.0, 2) AS DurationHours
+FROM playlists p
+JOIN playlist_track pt ON p.PlaylistId = pt.PlaylistId
+JOIN tracks t ON pt.TrackID = t.TrackId
+GROUP BY p.PlaylistId, p.Name
+HAVING ROUND(SUM(t.milliseconds) / 3600000.0, 2) > 2;
+
+-- Q9
+SELECT
+    ar.Name AS Performer,
+    al.Title AS RecordTitle,
+    COUNT(t.TrackId) AS TrackTotal,
+    SUM(t.Milliseconds) / 60000.0 AS LengthMinutes,
+    RANK() OVER (
+        PARTITION BY ar.ArtistId
+        ORDER BY COUNT(t.TrackId) DESC
+    ) AS RankWithinArtist
+FROM artists ar
+JOIN albums al ON ar.ArtistId = al.ArtistId
+JOIN tracks t ON al.AlbumId = t.AlbumId
+GROUP BY ar.ArtistId, ar.Name, al.AlbumId, al.Title
+HAVING LengthMinutes > 30;
